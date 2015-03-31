@@ -1,4 +1,4 @@
-package main
+package buildpackusage
 
 import (
 	"fmt"
@@ -33,5 +33,6 @@ func main() {
 }
 
 func (c *CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string) {
-	fmt.Println("----------              FIN               -----------")
+	fmt.Println("")
+	fmt.Println("Buildpacks in use across all organizations...")
 }

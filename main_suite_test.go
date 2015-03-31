@@ -1,4 +1,4 @@
-package main_test
+package buildpackusage_test
 
 import (
 	"github.com/cloudfoundry/cli/testhelpers/plugin_builder"

@@ -1,4 +1,4 @@
-package main_test
+package buildpackusage_test
 
 import (
 	"github.com/cloudfoundry/cli/plugin/fakes"
@@ -19,11 +19,11 @@ var _ = Describe("Cloud Foundry Buildpack Usage Command", func() {
 		})
 
 		It("calls the buildpack-usage command with no arguments", func() {
-			io_helpers.CaptureOutput(func() {
+			output := io_helpers.CaptureOutput(func() {
 				callBuildpackUsageCommandPlugin.Run(fakeCliConnection, []string{"buildpack-usage"})
 			})
 
-			Expect(len(fakeCliConnection.CliCommandArgsForCall(0))).To(Equal(0))
+			Expect(output[1]).To(Equal("Buildpacks in use across all organizations..."))
 		})
 	})
 })
