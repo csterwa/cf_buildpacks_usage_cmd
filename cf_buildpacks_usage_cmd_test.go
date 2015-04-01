@@ -1,9 +1,6 @@
 package main_test
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/cloudfoundry/cli/plugin/fakes"
 	io_helpers "github.com/cloudfoundry/cli/testhelpers/io"
 	. "github.com/csterwa/cf_buildpacks_usage_cmd"
@@ -29,20 +26,10 @@ var _ = Describe("Cloud Foundry Buildpack Usage Command", func() {
 			})
 
 			Expect(output[1]).To(Equal("Buildpacks in use across all organizations..."))
-			Expect(output[2]).To(Equal("2 apps found"))
-			Expect(output[4]).To(ContainSubstring("App Name"))
-			Expect(output[4]).To(ContainSubstring("Buildpack"))
-			Expect(output[4]).To(ContainSubstring("Detected Buildpack"))
-
-			dataRows := []string{output[5], output[6]}
-			dataRowsAsS := strings.Join(dataRows, "")
-
-			fmt.Println(output[5])
-			fmt.Println(output[6])
-			Expect(dataRowsAsS).To(ContainSubstring("app2"))
-			Expect(dataRowsAsS).To(ContainSubstring("Java"))
-			Expect(dataRowsAsS).To(ContainSubstring("app1"))
-			Expect(dataRowsAsS).To(ContainSubstring("Node.js"))
+			Expect(output[2]).To(Equal("2 buildpacks found across 2 app deployments"))
+			Expect(output[4]).To(Equal("Buildpacks Used"))
+			Expect(output[5]).To(Equal("Java"))
+			Expect(output[6]).To(Equal("Node.js"))
 		})
 	})
 })

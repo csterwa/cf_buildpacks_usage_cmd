@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/cloudfoundry/cli/plugin"
@@ -61,9 +62,22 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 
 	res := c.GetAppData(cliConnection)
 
-	fmt.Printf("| App Name | Buildpack | Detected Buildpack |\n")
+	fmt.Printf("Buildpacks Used\n")
+
+	var buildpacksUsed sort.StringSlice
+
 	for _, val := range res {
-		fmt.Printf("| %v | %v | %v |\n", val.Entity.Name, val.Entity.Buildpack, val.Entity.DetectedBuildpack)
+		bp := val.Entity.Buildpack
+		if bp == "" {
+			bp = val.Entity.DetectedBuildpack
+		}
+		buildpacksUsed = append(buildpacksUsed, bp)
+	}
+
+	buildpacksUsed.Sort()
+
+	for _, buildpack := range buildpacksUsed {
+		fmt.Printf("%v\n", buildpack)
 	}
 }
 
@@ -73,7 +87,7 @@ func (c CliBuildpackUsage) GetAppData(cliConnection plugin.CliConnection) []AppS
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
 	res := &AppSearchResults{}
 	json.Unmarshal([]byte(strings.Join(output, "")), &res)
-	fmt.Printf("%v apps found\n\n", res.TotalResults)
+	fmt.Printf("%v buildpacks found across %v app deployments\n\n", res.TotalResults, res.TotalResults)
 
 	return res.Resources
 }
