@@ -35,16 +35,16 @@ func (c *CliBuildpackUsage) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name: "CliBuildpackUsage",
 		Version: plugin.VersionType{
-			Major: 0,
-			Minor: 3,
+			Major: 1,
+			Minor: 0,
 			Build: 0,
 		},
 		Commands: []plugin.Command{
 			{
 				Name:     "buildpack-usage",
-				HelpText: "Command to view buildpack usage at org, space or entire Cloud Foundry levels.",
+				HelpText: "Command to view buildpack usage in current CLI target context.",
 				UsageDetails: plugin.Usage{
-					Usage: "buildpack-usage\n   cf buildpack-usage [-o ORG] [-s SPACE]",
+					Usage: "buildpack-usage\n   cf buildpack-usage",
 				},
 			},
 		},

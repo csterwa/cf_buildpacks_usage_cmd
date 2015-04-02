@@ -6,7 +6,7 @@ Cloud Foundry plugin extension to view all buildpacks used in across a Cloud Fou
 
 ```
 $ go get github.com/csterwa/cf_buildpack_usage_cmd
-$ cf install $GOCODE/bin/cf_buildpack_usage_cmd
+$ cf install-plugin $GOPATH/bin/cf_buildpacks_usage_cmd
 ```
 
 ## Usage
