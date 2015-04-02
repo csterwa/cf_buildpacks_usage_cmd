@@ -90,7 +90,7 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 	buildpacksUsed.Sort()
 
 	fmt.Printf("%v buildpacks found across %v app deployments\n\n", len(buildpacksUsed), res.TotalResults)
-	fmt.Printf("Buildpacks Used\n")
+	fmt.Printf("Buildpacks Used\n----------------\n")
 	for _, buildpack := range buildpacksUsed {
 		fmt.Printf("%v\n", buildpack)
 	}
