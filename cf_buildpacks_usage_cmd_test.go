@@ -25,12 +25,11 @@ var _ = Describe("Cloud Foundry Buildpack Usage Command", func() {
 				callBuildpackUsageCommandPlugin.Run(fakeCliConnection, []string{"buildpack-usage"})
 			})
 
-			Expect(output[1]).To(Equal("Buildpacks in use across all organizations..."))
-			Expect(output[2]).To(Equal("2 buildpacks found across 2 app deployments"))
-			Expect(output[4]).To(Equal("Buildpacks Used"))
-			Expect(output[5]).To(Equal("----------------"))
-			Expect(output[6]).To(Equal("Java"))
-			Expect(output[7]).To(Equal("Node.js"))
+			Expect(output[1]).To(Equal("2 buildpacks found across 2 app deployments"))
+			Expect(output[3]).To(Equal("Buildpacks Used"))
+			Expect(output[4]).To(Equal("----------------"))
+			Expect(output[5]).To(Equal("Java"))
+			Expect(output[6]).To(Equal("Node.js"))
 		})
 
 		It("removes duplicates from buildpacks used list", func() {
@@ -40,10 +39,9 @@ var _ = Describe("Cloud Foundry Buildpack Usage Command", func() {
 				callBuildpackUsageCommandPlugin.Run(fakeCliConnection, []string{"buildpack-usage"})
 			})
 
-			Expect(output[1]).To(Equal("Buildpacks in use across all organizations..."))
-			Expect(output[2]).To(Equal("1 buildpacks found across 2 app deployments"))
-			Expect(output[4]).To(Equal("Buildpacks Used"))
-			Expect(output[6]).To(Equal("Java"))
+			Expect(output[1]).To(Equal("1 buildpacks found across 2 app deployments"))
+			Expect(output[3]).To(Equal("Buildpacks Used"))
+			Expect(output[5]).To(Equal("Java"))
 		})
 	})
 })

@@ -14,7 +14,6 @@ $ cf install-plugin $GOPATH/bin/cf_buildpacks_usage_cmd
 ```
 $ cf buildpack-usage
 
-Buildpacks in use across all organizations...
 13 buildpacks found across 110 app deployments
 
 Buildpacks Used

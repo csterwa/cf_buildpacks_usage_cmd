@@ -71,9 +71,6 @@ func RemoveDuplicates(xs *sort.StringSlice) {
 
 // Run is what is executed by the Cloud Foundry CLI when the buildpack-usage command is specified
 func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string) {
-	fmt.Println("")
-	fmt.Println("Buildpacks in use across all organizations...")
-
 	res := c.GetAppData(cliConnection)
 
 	var buildpacksUsed sort.StringSlice
@@ -89,6 +86,7 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 	RemoveDuplicates(&buildpacksUsed)
 	buildpacksUsed.Sort()
 
+	fmt.Println("")
 	fmt.Printf("%v buildpacks found across %v app deployments\n\n", len(buildpacksUsed), res.TotalResults)
 	fmt.Printf("Buildpacks Used\n----------------\n")
 	for _, buildpack := range buildpacksUsed {
@@ -98,7 +96,11 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 
 // GetAppData requests all of the Application data from Cloud Foundry
 func (c CliBuildpackUsage) GetAppData(cliConnection plugin.CliConnection) AppSearchResults {
-	cmd := []string{"curl", "/v2/apps"}
+	//  "total_pages": 2,
+	//  "prev_url": null,
+	//  "next_url": "/v2/apps?order-direction=asc&page=2&results-per-page=100",
+
+	cmd := []string{"curl", "/v2/apps?results-per-page=100"}
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
 	res := &AppSearchResults{}
 	json.Unmarshal([]byte(strings.Join(output, "")), &res)

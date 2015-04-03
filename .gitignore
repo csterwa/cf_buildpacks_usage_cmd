@@ -1,2 +1,4 @@
 cf_buildpacks_usage_cmd
 cf_buildpacks_usage_cmd.exe
+cf_buildpacks_usage_cmd.linux64
+cf_buildpacks_usage_cmd.win64.exe
