@@ -55,20 +55,6 @@ func main() {
 	plugin.Start(new(CliBuildpackUsage))
 }
 
-// RemoveDuplicates makes the strings in a given slice all unique
-func RemoveDuplicates(xs *sort.StringSlice) {
-	found := make(map[string]bool)
-	j := 0
-	for i, x := range *xs {
-		if !found[x] {
-			found[x] = true
-			(*xs)[j] = (*xs)[i]
-			j++
-		}
-	}
-	*xs = (*xs)[:j]
-}
-
 // Run is what is executed by the Cloud Foundry CLI when the buildpack-usage command is specified
 func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string) {
 	res := c.GetAppData(cliConnection)
@@ -83,14 +69,43 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 		buildpacksUsed = append(buildpacksUsed, bp)
 	}
 
-	RemoveDuplicates(&buildpacksUsed)
-	buildpacksUsed.Sort()
+	var buildpackUsageTable = c.CreateBuildpackUsageTable(buildpacksUsed)
+	c.PrintBuildpacks(buildpackUsageTable, res.TotalResults)
+}
 
+// CreateBuildpackUsageTable creates a map whose key is buildpack and value is count of that buildpack
+func (c CliBuildpackUsage) CreateBuildpackUsageTable(buildpacksUsed sort.StringSlice) map[string]int {
+	buildpackUsageCounts := make(map[string]int)
+
+	for _, buildpackName := range buildpacksUsed {
+		if _, ok := buildpackUsageCounts[buildpackName]; ok {
+			buildpackUsageCounts[buildpackName]++
+		} else {
+			buildpackUsageCounts[buildpackName] = 1
+		}
+	}
+	
+	return buildpackUsageCounts
+}
+
+// PrintBuildpacks prints the buildpack data to console
+func (c CliBuildpackUsage) PrintBuildpacks(buildpackUsageTable map[string]int, totalResults int) {
 	fmt.Println("")
-	fmt.Printf("%v buildpacks found across %v app deployments\n\n", len(buildpacksUsed), res.TotalResults)
-	fmt.Printf("Buildpacks Used\n----------------\n")
-	for _, buildpack := range buildpacksUsed {
-		fmt.Printf("%v\n", buildpack)
+	fmt.Printf("%v buildpacks found across %v app deployments\n\n", len(buildpackUsageTable), totalResults)
+	fmt.Println("Buildpacks Used\n")
+	fmt.Println("Count\tName")
+	fmt.Println("-------------------------------")
+
+	buildpackNames := make([]string, len(buildpackUsageTable))
+	j := 0
+	for buildpack, _ := range buildpackUsageTable {
+		buildpackNames[j] = buildpack
+		j++
+	}
+
+	sort.Strings(buildpackNames)
+	for _, buildpack := range buildpackNames {
+		fmt.Printf("%v\t%v\n", buildpackUsageTable[buildpack], buildpack)
 	}
 }
 
