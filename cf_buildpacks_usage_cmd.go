@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/cloudfoundry/cli/plugin"
@@ -15,6 +16,7 @@ type CliBuildpackUsage struct{}
 // AppSearchResults represents top level attributes of JSON response from Cloud Foundry API
 type AppSearchResults struct {
 	TotalResults int                  `json:"total_results"`
+	TotalPages   int                  `json:"total_pages"`
 	Resources    []AppSearchResources `json:"resources"`
 }
 
@@ -84,7 +86,7 @@ func (c CliBuildpackUsage) CreateBuildpackUsageTable(buildpacksUsed sort.StringS
 			buildpackUsageCounts[buildpackName] = 1
 		}
 	}
-	
+
 	return buildpackUsageCounts
 }
 
@@ -111,14 +113,25 @@ func (c CliBuildpackUsage) PrintBuildpacks(buildpackUsageTable map[string]int, t
 
 // GetAppData requests all of the Application data from Cloud Foundry
 func (c CliBuildpackUsage) GetAppData(cliConnection plugin.CliConnection) AppSearchResults {
-	//  "total_pages": 2,
-	//  "prev_url": null,
-	//  "next_url": "/v2/apps?order-direction=asc&page=2&results-per-page=100",
+	var res AppSearchResults
+	res = c.UnmarshallAppSearchResults("/v2/apps?order-direction=asc&results-per-page=100", cliConnection)
 
-	cmd := []string{"curl", "/v2/apps?results-per-page=100"}
+	if res.TotalPages > 1 {
+		for i := 2; i <= res.TotalPages; i++ {
+			apiUrl := fmt.Sprintf("/v2/apps?order-direction=asc&page=%v&results-per-page=100", strconv.Itoa(i))
+			tRes := c.UnmarshallAppSearchResults(apiUrl, cliConnection)
+			res.Resources = append(res.Resources, tRes.Resources...)
+		}
+	}
+
+	return res
+}
+
+func (c CliBuildpackUsage) UnmarshallAppSearchResults(apiUrl string, cliConnection plugin.CliConnection) AppSearchResults {
+	var tRes AppSearchResults
+	cmd := []string{"curl", apiUrl}
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
-	res := &AppSearchResults{}
-	json.Unmarshal([]byte(strings.Join(output, "")), &res)
+	json.Unmarshal([]byte(strings.Join(output, "")), &tRes)
 
-	return *res
+	return tRes
 }
