@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"sort"
 	"strconv"
@@ -11,7 +12,9 @@ import (
 )
 
 // CliBuildpackUsage represents Buildpack Usage CLI interface
-type CliBuildpackUsage struct{}
+type CliBuildpackUsage struct {
+	printApps *bool
+}
 
 // AppSearchResults represents top level attributes of JSON response from Cloud Foundry API
 type AppSearchResults struct {
@@ -46,7 +49,10 @@ func (c *CliBuildpackUsage) GetMetadata() plugin.PluginMetadata {
 				Name:     "buildpack-usage",
 				HelpText: "Command to view buildpack usage in current CLI target context.",
 				UsageDetails: plugin.Usage{
-					Usage: "buildpack-usage\n   cf buildpack-usage",
+					Usage: "cf [--apps] buildpack-usage",
+					Options: map[string]string{
+						"--apps": "For each buildpack, print the apps that use it",
+					},
 				},
 			},
 		},
@@ -59,9 +65,18 @@ func main() {
 
 // Run is what is executed by the Cloud Foundry CLI when the buildpack-usage command is specified
 func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string) {
+	echoFlagSet := flag.NewFlagSet("buildpack-usage", flag.ContinueOnError)
+	printApps := echoFlagSet.Bool("apps", false, "displayes apps using each buildpack")
+
+	err := echoFlagSet.Parse(args[1:])
+	if err != nil {
+		c.exitWithUsage("buildpack-usage")
+	}
+
 	res := c.GetAppData(cliConnection)
 
 	var buildpacksUsed sort.StringSlice
+	usedBy := make(map[string][]string)
 
 	for _, val := range res.Resources {
 		bp := val.Entity.Buildpack
@@ -69,10 +84,13 @@ func (c CliBuildpackUsage) Run(cliConnection plugin.CliConnection, args []string
 			bp = val.Entity.DetectedBuildpack
 		}
 		buildpacksUsed = append(buildpacksUsed, bp)
+		if *printApps {
+			usedBy[bp] = append(usedBy[bp], val.Entity.Name)
+		}
 	}
 
 	var buildpackUsageTable = c.CreateBuildpackUsageTable(buildpacksUsed)
-	c.PrintBuildpacks(buildpackUsageTable, res.TotalResults)
+	c.PrintBuildpacks(buildpackUsageTable, res.TotalResults, *printApps, usedBy)
 }
 
 // CreateBuildpackUsageTable creates a map whose key is buildpack and value is count of that buildpack
@@ -91,35 +109,40 @@ func (c CliBuildpackUsage) CreateBuildpackUsageTable(buildpacksUsed sort.StringS
 }
 
 // PrintBuildpacks prints the buildpack data to console
-func (c CliBuildpackUsage) PrintBuildpacks(buildpackUsageTable map[string]int, totalResults int) {
+func (c CliBuildpackUsage) PrintBuildpacks(buildpackUsageTable map[string]int, totalResults int, printApps bool, usedBy map[string][]string) {
 	fmt.Println("")
 	fmt.Printf("%v buildpacks found across %v app deployments\n\n", len(buildpackUsageTable), totalResults)
-	fmt.Println("Buildpacks Used\n")
-	fmt.Println("Count\tName")
-	fmt.Println("-------------------------------")
+	fmt.Printf("Buildpacks Used\n\n")
+	if printApps {
+		fmt.Printf("%-8v%-24v%v\n", "Count", "Name", "Used By")
+		fmt.Println(strings.Repeat("-", 39))
+	} else {
+		fmt.Printf("%-8v%-24v\n", "Count", "Name")
+		fmt.Println(strings.Repeat("-", 31))
+	}
 
 	buildpackNames := make([]string, len(buildpackUsageTable))
 	j := 0
-	for buildpack, _ := range buildpackUsageTable {
+	for buildpack := range buildpackUsageTable {
 		buildpackNames[j] = buildpack
 		j++
 	}
 
 	sort.Strings(buildpackNames)
 	for _, buildpack := range buildpackNames {
-		fmt.Printf("%v\t%v\n", buildpackUsageTable[buildpack], buildpack)
+		fmt.Printf("%-8v%-24v%v\n", buildpackUsageTable[buildpack], buildpack, strings.Join(usedBy[buildpack], ", "))
 	}
 }
 
 // GetAppData requests all of the Application data from Cloud Foundry
 func (c CliBuildpackUsage) GetAppData(cliConnection plugin.CliConnection) AppSearchResults {
 	var res AppSearchResults
-	res = c.UnmarshallAppSearchResults("/v2/apps?order-direction=asc&results-per-page=100", cliConnection)
+	res = c.unmarshallAppSearchResults("/v2/apps?order-direction=asc&results-per-page=100", cliConnection)
 
 	if res.TotalPages > 1 {
 		for i := 2; i <= res.TotalPages; i++ {
-			apiUrl := fmt.Sprintf("/v2/apps?order-direction=asc&page=%v&results-per-page=100", strconv.Itoa(i))
-			tRes := c.UnmarshallAppSearchResults(apiUrl, cliConnection)
+			apiURL := fmt.Sprintf("/v2/apps?order-direction=asc&page=%v&results-per-page=100", strconv.Itoa(i))
+			tRes := c.unmarshallAppSearchResults(apiURL, cliConnection)
 			res.Resources = append(res.Resources, tRes.Resources...)
 		}
 	}
@@ -127,11 +150,21 @@ func (c CliBuildpackUsage) GetAppData(cliConnection plugin.CliConnection) AppSea
 	return res
 }
 
-func (c CliBuildpackUsage) UnmarshallAppSearchResults(apiUrl string, cliConnection plugin.CliConnection) AppSearchResults {
+func (c CliBuildpackUsage) unmarshallAppSearchResults(apiURL string, cliConnection plugin.CliConnection) AppSearchResults {
 	var tRes AppSearchResults
-	cmd := []string{"curl", apiUrl}
+	cmd := []string{"curl", apiURL}
 	output, _ := cliConnection.CliCommandWithoutTerminalOutput(cmd...)
 	json.Unmarshal([]byte(strings.Join(output, "")), &tRes)
 
 	return tRes
+}
+
+func (c CliBuildpackUsage) exitWithUsage(command string) {
+	metadata := c.GetMetadata()
+	for _, candidate := range metadata.Commands {
+		if candidate.Name == command {
+			fmt.Println("Usage: " + candidate.UsageDetails.Usage)
+			panic(1)
+		}
+	}
 }
